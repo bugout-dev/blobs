@@ -30,7 +30,6 @@ setup(
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python",
         "License :: OSI Approved :: Apache Software License",
-        "Topic :: Software Development :: Libraries",
     ],
     python_requires=">=3.8",
     entry_points={
