@@ -13,14 +13,12 @@ class TestLoadDefinitions(unittest.TestCase):
   "ethereum": {
     "chain_id": 1,
     "http": "http://example.com/ethereum",
-    "expected_block_interval": 15,
-    "healthcheck_blocks": 3
+    "healthy_block_interval": 45
   },
   "polygon": {
     "chain_id": 137,
     "http": "https://polygon-rpc.com",
-    "expected_block_interval": 2.3,
-    "healthcheck_blocks": 20
+    "healthy_block_interval": 7.5
   }
 }
         """
@@ -33,14 +31,12 @@ class TestLoadDefinitions(unittest.TestCase):
             "ethereum": blockchains.BlockchainDefinition(
                 chain_id=1,
                 http="http://example.com/ethereum",
-                expected_block_interval=15.0,
-                healthcheck_blocks=3,
+                healthy_block_interval=45.0,
             ),
             "polygon": blockchains.BlockchainDefinition(
                 chain_id=137,
                 http="https://polygon-rpc.com",
-                expected_block_interval=2.3,
-                healthcheck_blocks=20,
+                healthy_block_interval=7.5,
             ),
         }
 
