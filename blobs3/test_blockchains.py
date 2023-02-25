@@ -6,75 +6,58 @@ from . import blockchains
 
 
 class TestLoadDefinitions(unittest.TestCase):
-    def test_load_definitions_from_string(self):
-        definitions_string = """
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.definitions_string = """
 {
   "ethereum": {
     "chain_id": 1,
     "http": "http://example.com/ethereum",
-    "expected_block_interval": 15
+    "expected_block_interval": 15,
+    "healthcheck_blocks": 3
   },
   "polygon": {
     "chain_id": 137,
     "http": "https://polygon-rpc.com",
-    "expected_block_interval": 2.3
+    "expected_block_interval": 2.3,
+    "healthcheck_blocks": 20
   }
 }
         """
 
-        definitions = blockchains.load_definitions_from_string(definitions_string)
-        expected_definitions = {
+        cls.definitions_file = tempfile.mktemp()
+        with open(cls.definitions_file, "w") as ofp:
+            ofp.write(cls.definitions_string)
+
+        cls.expected_definitions = {
             "ethereum": blockchains.BlockchainDefinition(
                 chain_id=1,
                 http="http://example.com/ethereum",
                 expected_block_interval=15.0,
+                healthcheck_blocks=3,
             ),
             "polygon": blockchains.BlockchainDefinition(
                 chain_id=137,
                 http="https://polygon-rpc.com",
                 expected_block_interval=2.3,
+                healthcheck_blocks=20,
             ),
         }
 
-        self.assertDictEqual(definitions, expected_definitions)
+        return super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        os.remove(cls.definitions_file)
+        return super().tearDownClass()
+
+    def test_load_definitions_from_string(self):
+        definitions = blockchains.load_definitions_from_string(self.definitions_string)
+        self.assertDictEqual(definitions, self.expected_definitions)
 
     def test_load_definitions_from_file(self):
-        definitions_string = """
-{
-  "ethereum": {
-    "chain_id": 1,
-    "http": "http://example.com/ethereum",
-    "expected_block_interval": 15
-  },
-  "polygon": {
-    "chain_id": 137,
-    "http": "https://polygon-rpc.com",
-    "expected_block_interval": 2.3
-  }
-}
-        """
-
-        try:
-            definitions_file = tempfile.mktemp()
-            with open(definitions_file, "w") as ofp:
-                ofp.write(definitions_string)
-
-            definitions = blockchains.load_definitions_from_file(definitions_file)
-            expected_definitions = {
-                "ethereum": blockchains.BlockchainDefinition(
-                    chain_id=1,
-                    http="http://example.com/ethereum",
-                    expected_block_interval=15.0,
-                ),
-                "polygon": blockchains.BlockchainDefinition(
-                    chain_id=137,
-                    http="https://polygon-rpc.com",
-                    expected_block_interval=2.3,
-                ),
-            }
-            self.assertDictEqual(definitions, expected_definitions)
-        finally:
-            os.remove(definitions_file)
+        definitions = blockchains.load_definitions_from_file(self.definitions_file)
+        self.assertDictEqual(definitions, self.expected_definitions)
 
 
 if __name__ == "__main__":
