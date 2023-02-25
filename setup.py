@@ -11,7 +11,7 @@ setup(
     name="blobs3",
     version=VERSION,
     packages=find_packages(),
-    install_requires=["boto3", "fastapi", "pydantic", "web3", "web3login"],
+    install_requires=["boto3", "fastapi", "pydantic", "uvicorn", "web3", "web3login"],
     extras_require={
         "dev": ["black", "mypy", "isort"],
         "distribute": ["setuptools", "twine", "wheel"],

@@ -12,11 +12,13 @@ class TestLoadDefinitions(unittest.TestCase):
 {
   "ethereum": {
     "chain_id": 1,
+    "poa": false,
     "http": "http://example.com/ethereum",
     "healthy_block_interval": 45
   },
   "polygon": {
     "chain_id": 137,
+    "poa": true,
     "http": "https://polygon-rpc.com",
     "healthy_block_interval": 7.5
   }
@@ -30,11 +32,13 @@ class TestLoadDefinitions(unittest.TestCase):
         cls.expected_definitions = {
             "ethereum": blockchains.BlockchainDefinition(
                 chain_id=1,
+                poa=False,
                 http="http://example.com/ethereum",
                 healthy_block_interval=45.0,
             ),
             "polygon": blockchains.BlockchainDefinition(
                 chain_id=137,
+                poa=True,
                 http="https://polygon-rpc.com",
                 healthy_block_interval=7.5,
             ),
