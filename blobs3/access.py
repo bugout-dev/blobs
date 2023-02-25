@@ -52,7 +52,7 @@ class StorageAccess(BaseModel):
     authorization: AuthorizationSpecification
     access: AccessType
 
-    @validator(storage_path)
+    @validator("storage_path")
     def validate_storage_path(cls, v: List[str]):
         for component in v:
             if "/" in component and not (
