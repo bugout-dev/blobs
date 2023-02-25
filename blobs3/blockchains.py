@@ -38,11 +38,25 @@ def load_definitions_from_string(
     return parse_raw_as(Dict[str, BlockchainDefinition], definitions_string)
 
 
+class BlockchainHealth(BaseModel):
+    """
+    Represents the healthcheck status of a blockchain
+    """
+
+    http: str
+    chain_id: int
+    healthy_block_interval: float
+    last_block_number: int
+    last_block_timestamp: int
+    healthy: bool
+
+
 @dataclass
 class Blockchain:
     """
     Internal representation of a blockchain, including a web3 client to the chain and healthchecks.
     """
+
     http: str
     chain_id: int
     healthy_block_interval: float
@@ -153,6 +167,10 @@ class BlockchainManager:
             }
 
     def start_healthchecks(self):
+        for blockchain in self.blockchains.values():
+            apply_healthcheck(blockchain)
+            # We do not assume that the node is healthy to start out
+            blockchain.healthy = False
         for timer in self.timers.values():
             timer.start()
 
@@ -161,3 +179,17 @@ class BlockchainManager:
             timer.stop()
         for blockchain in self.blockchains.values():
             blockchain.healthy = False
+
+    def health_status(self) -> Dict[str, BlockchainHealth]:
+        status = {
+            name: BlockchainHealth(
+                http=blockchain.http,
+                chain_id=blockchain.chain_id,
+                healthy_block_interval=blockchain.healthy_block_interval,
+                last_block_number=blockchain.last_block_number,
+                last_block_timestamp=blockchain.last_block_timestamp,
+                healthy=blockchain.healthy,
+            )
+            for name, blockchain in self.blockchains.items()
+        }
+        return status
