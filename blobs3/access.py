@@ -86,7 +86,7 @@ def load_access_list_from_string(access_list_string: str):
 
 
 def match_paths(
-    path_components: List[str], storage_access: StorageAccess
+    access_type: AccessType, path_components: List[str], storage_access: StorageAccess
 ) -> Tuple[bool, Dict[str, str]]:
     """
     Checks if the components from a user-provided path match a given access authorization.
@@ -96,6 +96,9 @@ def match_paths(
     "var/<varname>" for all variables that occur in the registered_path, and the values are the values
     that should be substituted for the corresponding variables.
     """
+    if storage_access.access != access_type:
+        return (False, {})
+
     variable_bindings: Dict[str, str] = {}
     for i, registered_component in enumerate(storage_access.storage_path):
         if registered_component.startswith("var/"):
@@ -116,11 +119,19 @@ class AccessManager:
     def __init__(self, storage_access_list: List[StorageAccess]) -> None:
         self.storage_access_list = storage_access_list
 
-    def match(self, path: str) -> List[Tuple[StorageAccess, Dict[str, str]]]:
+    def match(
+        self, access_type: AccessType, path: str
+    ) -> List[Tuple[StorageAccess, Dict[str, str]]]:
         """
         Returns all access authorizations that apply to the given path. Each matching authorization comes
         with a binding of values for each variable component of that path.
         """
         path_components = path.split("/")
+        matching_access_list: List[Tuple[StorageAccess, Dict[str, str]]] = []
         for storage_access in self.storage_access_list:
-            pass
+            is_match, variable_bindings = match_paths(
+                access_type, path_components, storage_access
+            )
+            if is_match:
+                matching_access_list.append((storage_access, variable_bindings))
+        return matching_access_list

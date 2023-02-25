@@ -13,7 +13,7 @@ setup(
     packages=find_packages(),
     install_requires=["boto3", "fastapi", "pydantic", "uvicorn", "web3", "web3login"],
     extras_require={
-        "dev": ["black", "mypy", "isort"],
+        "dev": ["black", "mypy", "isort", "moonworm"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
     description="blobs3: Blob storage with web3 access control",
@@ -32,6 +32,6 @@ setup(
             "blobs3=blobs3.cli:main",
         ]
     },
-    package_data={"blobs3": ["version.txt"]},
+    package_data={"blobs3": ["version.txt", "contracts/*.json"]},
     include_package_data=True,
 )
