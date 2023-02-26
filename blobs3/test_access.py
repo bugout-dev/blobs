@@ -115,7 +115,7 @@ class TestMatchPaths(unittest.TestCase):
         ]
 
         is_match, variable_bindings = access.match_paths(
-            path_components, storage_access
+            access.AccessType.CREATE, path_components, storage_access
         )
 
         self.assertTrue(is_match)
@@ -144,7 +144,7 @@ class TestMatchPaths(unittest.TestCase):
         ]
 
         is_match, variable_bindings = access.match_paths(
-            path_components, storage_access
+            access.AccessType.CREATE, path_components, storage_access
         )
 
         self.assertTrue(is_match)
@@ -172,7 +172,7 @@ class TestMatchPaths(unittest.TestCase):
         ]
 
         is_match, variable_bindings = access.match_paths(
-            path_components, storage_access
+            access.AccessType.CREATE, path_components, storage_access
         )
 
         self.assertFalse(is_match)
@@ -207,7 +207,7 @@ class TestMatchPaths(unittest.TestCase):
         ]
 
         is_match, variable_bindings = access.match_paths(
-            path_components, storage_access
+            access.AccessType.CREATE, path_components, storage_access
         )
 
         self.assertFalse(is_match)

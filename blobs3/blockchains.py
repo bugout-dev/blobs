@@ -193,3 +193,6 @@ class BlockchainManager:
             for name, blockchain in self.blockchains.items()
         }
         return status
+
+    def get(self, blockchain_name: str) -> Optional[Blockchain]:
+        return self.blockchains.get(blockchain_name)

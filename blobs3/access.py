@@ -3,10 +3,15 @@ Access control layer for blobs3
 """
 
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
+from typing import cast, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, parse_file_as, parse_raw_as, validator
 from web3 import Web3
+
+from .blockchains import BlockchainManager
+from .contracts.ERC20_interface import Contract as ERC20
+from .contracts.ERC721_interface import Contract as ERC721
+from .contracts.ERC1155_interface import Contract as ERC1155
 
 
 class AuthorizationType(str, Enum):
@@ -75,14 +80,18 @@ def load_access_list_from_file(filepath: str):
     """
     Loads a storage access list from a file.
     """
-    return parse_file_as(List[StorageAccess], filepath)
+    access_list = parse_file_as(List[StorageAccess], filepath)
+    access_list.sort(key=lambda access: len(cast(StorageAccess, access).storage_path))
+    return access_list
 
 
 def load_access_list_from_string(access_list_string: str):
     """
     Loads a storage access list from a JSON string (or bytes).
     """
-    return parse_raw_as(List[StorageAccess], access_list_string)
+    access_list = parse_raw_as(List[StorageAccess], access_list_string)
+    access_list.sort(key=lambda access: len(cast(StorageAccess, access).storage_path))
+    return access_list
 
 
 def match_paths(
@@ -116,8 +125,11 @@ class AccessManager:
     It also matches user-provided paths to the storage paths it matches.
     """
 
-    def __init__(self, storage_access_list: List[StorageAccess]) -> None:
+    def __init__(
+        self, storage_access_list: List[StorageAccess], blockchains: BlockchainManager
+    ) -> None:
         self.storage_access_list = storage_access_list
+        self.blockchains = blockchains
 
     def match(
         self, access_type: AccessType, path: str
@@ -135,3 +147,69 @@ class AccessManager:
             if is_match:
                 matching_access_list.append((storage_access, variable_bindings))
         return matching_access_list
+
+    def authorization(
+        self, user_address: str, access_type: AccessType, path: str
+    ) -> Optional[StorageAccess]:
+        """
+        If the user with the given address is authorized to make the given access_type on the given
+        path, this function returns the first StorageAccess it encounters that grants them that
+        authorization.
+
+        Otherwise, if the user is not authorized for that access, it returns None.
+        """
+        possible_authorizations = self.match(access_type, path)
+        for storage_access, variable_bindings in possible_authorizations:
+            if (
+                storage_access.authorization.authorization_type
+                == AuthorizationType.PUBLIC
+            ):
+                return storage_access
+            else:
+                blockchain = self.blockchains.get(
+                    storage_access.authorization.blockchain
+                )
+                if blockchain is None or not blockchain.healthy:
+                    continue
+
+                # Process contract_address, token_id, and minimum_balance with substitutions from
+                # variable_bindings if necessary.
+                contract_address = storage_access.authorization.contract_address
+                if variable_bindings.get(contract_address) is not None:
+                    contract_address = variable_bindings[contract_address]
+
+                token_id = storage_access.authorization.token_id
+                if variable_bindings.get(token_id) is not None:
+                    token_id = variable_bindings[token_id]
+
+                minimum_balance = storage_access.authorization.minimum_balance
+                if variable_bindings.get(minimum_balance) is not None:
+                    minimum_balance = int(variable_bindings[minimum_balance])
+
+                if (
+                    storage_access.authorization.authorization_type
+                    == AuthorizationType.ERC20
+                ):
+                    contract = ERC20(blockchain.client, contract_address)
+                    # Ignores token_id.
+                    if contract.balanceOf(user_address) >= minimum_balance:
+                        return storage_access
+                elif (
+                    storage_access.authorization.authorization_type
+                    == AuthorizationType.ERC721
+                ):
+                    contract = ERC721(blockchain.client, contract_address)
+                    # Ignores minimum_balance
+                    if contract.ownerOf(token_id) == Web3.toChecksumAddress(
+                        user_address
+                    ):
+                        return storage_access
+                elif (
+                    storage_access.authorization.authorization_type
+                    == AuthorizationType.ERC1155
+                ):
+                    contract = ERC1155(blockchain.client, contract_address)
+                    if contract.balanceOf(user_address, token_id) >= minimum_balance:
+                        return storage_access
+
+        return None
