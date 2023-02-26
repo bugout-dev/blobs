@@ -1,0 +1,24 @@
+[
+  {
+    "storage_path": ["static.greatwyrm.xyz", "characters", "var/tokenId"],
+    "authorization": {
+      "blockchain": "wyrm",
+      "authorization_type": "ERC721",
+      "contract_address": "0xDfbC5320704b417C5DBbd950738A32B8B5Ed75b3",
+      "token_id": "var/tokenId",
+      "minimum_balance": 1
+    },
+    "access": "CREATE"
+  },
+  {
+    "storage_path": ["static.greatwyrm.xyz", "characters", "var/tokenId"],
+    "authorization": {
+      "blockchain": "wyrm",
+      "authorization_type": "ERC721",
+      "contract_address": "0xDfbC5320704b417C5DBbd950738A32B8B5Ed75b3",
+      "token_id": "var/tokenId",
+      "minimum_balance": 1
+    },
+    "access": "UPDATE"
+  }
+]

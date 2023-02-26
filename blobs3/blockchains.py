@@ -142,7 +142,9 @@ class BlockchainManager:
 
     def __init__(self, blockchain_definitions: Dict[str, BlockchainDefinition]):
         self.blockchains: Dict[str, Blockchain] = {}
+        self.timers: Dict[str, Optional[RepeatingTimer]] = {}
         for blockchain_name, blockchain_def in blockchain_definitions.items():
+            assume_healthy = blockchain_def.healthy_block_interval <= 0
             blockchain = Blockchain(
                 http=blockchain_def.http,
                 chain_id=blockchain_def.chain_id,
@@ -150,35 +152,34 @@ class BlockchainManager:
                 client=Web3(Web3.HTTPProvider(blockchain_def.http)),
                 last_block_number=0,
                 last_block_timestamp=0,
-                healthy=False,
+                healthy=assume_healthy,
                 lock=threading.Lock(),
             )
             # Important: Add poa middleware for Proof of Authority chains
             if blockchain_def.poa:
                 blockchain.client.middleware_onion.inject(geth_poa_middleware, layer=0)
             self.blockchains[blockchain_name] = blockchain
-            self.timers: Dict[str, RepeatingTimer] = {
-                name: RepeatingTimer(
+            if assume_healthy:
+                self.timers[blockchain_name] = None
+            else:
+                self.timers[blockchain_name] = RepeatingTimer(
                     blockchain.healthy_block_interval,
                     apply_healthcheck,
                     args=[blockchain],
                 )
-                for name, blockchain in self.blockchains.items()
-            }
 
     def start_healthchecks(self):
         for blockchain in self.blockchains.values():
             apply_healthcheck(blockchain)
-            # We do not assume that the node is healthy to start out
-            blockchain.healthy = False
         for timer in self.timers.values():
-            timer.start()
+            if timer is not None:
+                timer.start()
 
     def stop_healthchecks(self):
-        for timer in self.timers.values():
-            timer.stop()
-        for blockchain in self.blockchains.values():
-            blockchain.healthy = False
+        for blockchain_name, timer in self.timers.items():
+            if timer is not None:
+                timer.stop()
+                self.blockchains[blockchain_name].healthy = False
 
     def health_status(self) -> Dict[str, BlockchainHealth]:
         status = {

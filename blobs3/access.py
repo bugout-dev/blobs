@@ -180,7 +180,7 @@ class AccessManager:
 
                 token_id = storage_access.authorization.token_id
                 if variable_bindings.get(token_id) is not None:
-                    token_id = variable_bindings[token_id]
+                    token_id = int(variable_bindings[token_id])
 
                 minimum_balance = storage_access.authorization.minimum_balance
                 if variable_bindings.get(minimum_balance) is not None:
@@ -192,7 +192,7 @@ class AccessManager:
                 ):
                     contract = ERC20(blockchain.client, contract_address)
                     # Ignores token_id.
-                    if contract.balanceOf(user_address) >= minimum_balance:
+                    if contract.balanceOf(user_address).call() >= minimum_balance:
                         return storage_access
                 elif (
                     storage_access.authorization.authorization_type
@@ -200,7 +200,7 @@ class AccessManager:
                 ):
                     contract = ERC721(blockchain.client, contract_address)
                     # Ignores minimum_balance
-                    if contract.ownerOf(token_id) == Web3.toChecksumAddress(
+                    if contract.ownerOf(token_id).call() == Web3.toChecksumAddress(
                         user_address
                     ):
                         return storage_access
@@ -209,7 +209,10 @@ class AccessManager:
                     == AuthorizationType.ERC1155
                 ):
                     contract = ERC1155(blockchain.client, contract_address)
-                    if contract.balanceOf(user_address, token_id) >= minimum_balance:
+                    if (
+                        contract.balanceOf(user_address, token_id).call()
+                        >= minimum_balance
+                    ):
                         return storage_access
 
         return None
