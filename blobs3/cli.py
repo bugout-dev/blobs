@@ -1,5 +1,6 @@
 import argparse
 
+from . import metadata
 from .version import VERSION
 
 
@@ -15,6 +16,11 @@ def generate_cli() -> argparse.ArgumentParser:
         help="Print the blobs3 version",
     )
     parser.set_defaults(func=lambda _: parser.print_help())
+
+    subparsers = parser.add_subparsers()
+
+    metadata_parser = metadata.generate_cli()
+    subparsers.add_parser("metadata", parents=[metadata_parser], add_help=False)
 
     return parser
 
